@@ -1,0 +1,130 @@
+﻿<!DOCTYPE html>
+
+<!-- 
+    posta@maurizioconti.com 
+    2016 - fablabromagna.org
+    -->
+
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <title></title>
+	<meta charset="utf-8" />
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"></script>
+    <script src="http://cdn.pubnub.com/pubnub-3.14.1.min.js"></script>
+
+    <!-- JS e CSS dello Slider -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-slider/6.1.5/bootstrap-slider.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-slider/6.1.5/css/bootstrap-slider.min.css" crossorigin="anonymous">
+
+
+    <!-- CSS di Bootstrap -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+    <!-- Tema di Bootstrap -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap-theme.min.css" integrity="sha384-fLW2N01lMqjakBkx3l/M9EahuwpSfeNvV63J5ezn3uZzapT0u7EYsXMjQV+0En5r" crossorigin="anonymous">
+    <!-- JavaScript di Bootstrap-->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header clearfix">
+            <nav>
+                <ul class="nav nav-pills pull-right">
+                    <li role="presentation"><a href="http://fablabromagna.org/blog/"><img src="http://fablabromagna.org/blog/wp-content/uploads/2015/10/LogoSito3.png" /></a></li>
+                    <li role="presentation"><a href="http://www.schoolmakerday.it"><img height="100" src="http://www.schoolmakerday.it/wp-content/uploads/2016/03/School-Maker-Day.png" /></a></li>
+                </ul>
+            </nav>
+            <h3 class="text-muted">FabLab ESP RGB Lamp</h3>
+        </div>
+
+        <div class="jumbotron">
+            <h1>School Maker Day</h1>
+            <p class="lead">Sabato 20 Aprile 2016</p>
+            <p class="lead">Opificio Golinelli - Bologna</p>
+            <br />
+            <br />
+            <p><button class="btn btn-lg btn-default" type="button" onclick="Off()">OFF</button></p>
+            <button class="btn btn-lg btn-danger" type="button" onclick="Red()">Red</button>
+            <button class="btn btn-lg btn-success" type="button" onclick="Green()">Green</button>
+            <button class="btn btn-lg btn-primary" type="button" onclick="Blue()">Blue</button>
+            <button class="btn btn-lg btn-warning" type="button" onclick="Yellow()">Yellow</button>
+            <button class="btn btn-lg btn-info" type="button" onclick="Cyano()">Cyano</button>
+        </div>
+
+        <div class="row">
+            <div class="col-sm-12">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">FREEBOARD</h3>
+                    </div>
+                    <div class="panel-body">
+                        <iframe height="700" width="1024" src="https://freeboard.io/board/s5tdsh"></iframe>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-sm-12">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">RGB History</h3>
+                    </div>
+                    <div class="panel-body">
+                        <iframe height="1200" width="1024" src="https://dweet.io/follow/SchoolMakerDayRGB"></iframe>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-sm-12">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">LDR (lux) History</h3>
+                    </div>
+                    <div class="panel-body">
+                        <iframe height="1200" width="1024" src="https://dweet.io/follow/SchoolMakerDayLDR"></iframe>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+        <script>
+            function Off() {
+                var xhttp = new XMLHttpRequest();
+                xhttp.open("POST", "http://dweet.io/dweet/for/SchoolMakerDayRGB?red=0&green=0&blue=0", true);
+                xhttp.send();
+            }
+
+            function Red() {
+                var xhttp = new XMLHttpRequest();
+                xhttp.open("POST", "http://dweet.io/dweet/for/SchoolMakerDayRGB?red=1000&green=0&blue=0", true);
+                xhttp.send();
+            }
+
+            function Green() {
+                var xhttp = new XMLHttpRequest();
+                xhttp.open("POST", "http://dweet.io/dweet/for/SchoolMakerDayRGB?red=0&green=1000&blue=0", true);
+                xhttp.send();
+            }
+
+            function Blue() {
+                var xhttp = new XMLHttpRequest();
+                xhttp.open("POST", "http://dweet.io/dweet/for/SchoolMakerDayRGB?red=0&green=0&blue=1000", true);
+                xhttp.send();
+            }
+            function Yellow() {
+                var xhttp = new XMLHttpRequest();
+                xhttp.open("POST", "http://dweet.io/dweet/for/SchoolMakerDayRGB?red=1000&green=170&blue=0", true);
+                xhttp.send();
+            }
+
+            function Cyano() {
+                var xhttp = new XMLHttpRequest();
+                xhttp.open("POST", "http://dweet.io/dweet/for/SchoolMakerDayRGB?red=0&green=400&blue=300", true);
+                xhttp.send();
+            }
+        </script>
+</body>
+</html>

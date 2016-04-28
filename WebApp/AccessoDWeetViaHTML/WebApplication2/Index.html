@@ -1,0 +1,219 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <title></title>
+	<meta charset="utf-8" />
+    
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"></script>
+    <script src="http://cdn.pubnub.com/pubnub-3.14.1.min.js"></script>
+    
+    <!-- JS e CSS dello Slider -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-slider/6.1.5/bootstrap-slider.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-slider/6.1.5/css/bootstrap-slider.min.css" crossorigin="anonymous">
+    
+
+    <!-- CSS di Bootstrap -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+    <!-- Tema di Bootstrap -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap-theme.min.css" integrity="sha384-fLW2N01lMqjakBkx3l/M9EahuwpSfeNvV63J5ezn3uZzapT0u7EYsXMjQV+0En5r" crossorigin="anonymous">
+    <!-- JavaScript di Bootstrap-->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
+
+</head>
+<body>
+    <!--<div class="col-md-3">
+        <h2 class="text-center">Postman</h2>
+        <p class="text-center"><a id="button-1" class="btn btn-default" href="http://go.microsoft.com/fwlink/?LinkId=301865">Go &raquo;</a></p>
+    </div>-->
+    
+    <!--
+        Slider Bootstrap preso da qui
+        http://seiyria.com/bootstrap-slider/
+    -->
+
+    
+    <h2 id="Titolo" style="text-align: left" class="text-center">Pubnub non connesso...</h2>
+    <br />
+    <div class="col-md-1">
+        <!--Gli slider partono disabilitati. Alla connessione su PbNub, si abilitano...-->
+        <p>
+            <input id="inputRed"
+                data-slider-id='slRed'
+                type="text"
+                data-slider-min="0"
+                data-slider-max="255"
+                data-slider-step="1"
+                data-slider-value="0" 
+                data-slider-enabled="false"/>
+        </p>
+        <br />
+        
+        <p>
+            <input id="inputGreen"
+                data-slider-id='slGreen'
+                type="text"
+                data-slider-min="0"
+                data-slider-max="255"
+                data-slider-step="1"
+                data-slider-value="0"
+                data-slider-enabled="false"/>
+        </p>
+        <br />
+
+        <p>
+            <input id="inputBlue"
+                data-slider-id='slBlue'
+                type="text"
+                data-slider-min="0"
+                data-slider-max="255"
+                data-slider-step="1"
+                data-slider-value="0"
+                data-slider-enabled="false"/>
+        </p>
+        <br />
+        
+        <p>
+            <div id="colorePrevisto"></div>
+            <div id="coloreAttivato"></div>
+        <br />
+
+        <p class="text-center">
+            <a id="button-2" class="btn btn-default" href="http://go.microsoft.com/fwlink/?LinkId=301865">Spedisci</a>
+        </p>
+    </div>
+
+    <script type="text/javascript">
+        var contatore = 0;
+        var running = false;
+
+        var strCanale = "";
+        var objColore = null;
+        var objFaretto = null;
+
+        var rosso;
+        var verde;
+        var blu;
+
+        // Dichiaro un solo PubNub
+        var objPubnub = null;
+
+        // Metodo chiamato sull onchange degli sliders
+        var cambiaColorePrevisto = function () {
+
+            // Prende i colori una volta sola
+            rosso = r.getValue();
+            verde = g.getValue();
+            blu = b.getValue();
+
+            $('#colorePrevisto').css('background', 'rgb(' + rosso + ',' + verde + ',' + blu + ')')
+            setTimeout(function () {
+                GoPubNub();
+            }, 1000);
+
+        };
+
+        // Binda l'evento onchange degli slider 
+        // Inoltre fornisce una variabile r, g, b, per il metodo "cambiaColoreAttivato"
+        var r = $('#inputRed').slider().on('change', cambiaColorePrevisto).data('slider');
+        var g = $('#inputGreen').slider().on('change', cambiaColorePrevisto).data('slider');
+        var b = $('#inputBlue').slider().on('change', cambiaColorePrevisto).data('slider');
+
+        // Chiamato al ritorno da PubNub (per vedere se la chiamata PubNub è andata a buon fine)
+        var cambiaColoreAttivato = function () {
+            $('#coloreAttivato').css('background', 'rgb(' + r.getValue() + ',' + g.getValue() + ',' + b.getValue() + ')')
+        };
+
+        // Spedisce su PubNub il colore
+        var GoPubNub = function () {
+
+            objColore = { Red: rosso, Green: verde, Blue: blu };
+
+            // ...prepara un messaggio per PubNub...
+            objFaretto = {
+                channel: strCanale,
+                message: objColore,
+                callback: function (m) {            // al ritorno chiama questo...
+                    console.log("callback...")      // scrive sulla console quello che succede
+                    console.log(m)
+                    cambiaColoreAttivato();         // cambia colore su div
+                    running = false;
+                }
+            };
+
+            console.log(contatore++ + JSON.stringify(objFaretto));
+
+            if (!running) {
+                running = true;
+                objPubnub.publish(objFaretto);
+            }
+        }
+
+        // Solo quando la pagina viene caricata la prima volta...
+        $().ready(function () {
+
+            $('#button-2').click(
+                function (evento) {
+                    evento.preventDefault();    // evita che il click faccia quello per cui era programmato ...
+                    GoPubNub();                 // Invia i dati a PubNub
+                }
+            )
+
+            // Istanzio PubNub
+            var strPUB_KEY = 'pub-c-531543bb-e12b-4db6-9c4b-f9df0fee3067';
+            var strSUB_KEY = 'sub-c-021829ca-e9cb-11e5-8346-0619f8945a4f';
+            var objCOMBINED_KEYS = { publish_key: strPUB_KEY, subscribe_key: strSUB_KEY }
+            objPubnub = PUBNUB(objCOMBINED_KEYS);
+            strCanale = "Faretto1";
+
+            // ...si connette e abilita gli slidere se ce la fa
+            objPubnub.subscribe({
+                channel: strCanale,
+                message: function (message, envelope, channelOrGroup, time, channel) {
+                    console.log(
+                        "\nChiamo PubNub con i seguenti parametri:" + "\n" +
+                        "\tChannel or Group: " + JSON.stringify(channelOrGroup) + "\n" +
+                        "\tChannel: " + JSON.stringify(channel) + "\n" +
+                        "\tMessage: " + JSON.stringify(message) + "\n" +
+                        "\tTime: " + time + "\n" +
+                        "\tRaw Envelope: " + JSON.stringify(envelope)
+                    );
+                },
+                connect: function () {
+                    // Appena connessi a PubNub, abilitiamo gli slider
+                    $("#inputRed").slider("enable");
+                    $("#inputGreen").slider("enable");
+                    $("#inputBlue").slider("enable");
+                    $("#Titolo").html(strCanale + " connesso");
+                }
+            })
+
+            // Preso dal progetto Hackster che usa Postman
+            // NON USATO per ora... solo per reference...
+            // https://www.hackster.io/pulcher/you-are-the-ultimate-bounty-hunter-bcac23?utm_source=hackster&utm_medium=email&utm_campaign=new_projects
+            //$('#button-1').click(function (ev) {
+            //    ev.preventDefault();
+
+            //    $.ajax({
+            //        method: 'POST',
+            //        url: 'https://api.particle.io/v1/devices/240020001747343338333633/rebel?access_token=861bd910d87220da416009051b37ece22f0e019f&args=stuff',
+            //        data: { args: 'stuff' }
+            //    });
+            //})
+
+        });
+
+    </script>
+
+    <style>
+        /*Impone uno stile agli slider*/
+        #slRed .slider-selection {background: #FF0000;}
+        #slGreen .slider-selection {background: #00FF00;}
+        #slBlue .slider-selection {background: #0000FF;}
+
+        /* Impone uno stile ai div che visualizzano il colore*/
+        #colorePrevisto { height: 20px; }
+        #coloreAttivato { height: 20px; }
+    </style>
+</body>
+</html>
