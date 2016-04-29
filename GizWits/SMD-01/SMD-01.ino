@@ -18,11 +18,10 @@ void setup() {
   Serial.begin(115200);
   delay(10);
   
-  // We start by connecting to a WiFi network
-  Serial.println();
-  Serial.println();
+  // Si parte!
   Serial.print("Connecting to ");
   Serial.println(ssid);
+  
   WiFi.begin(ssid, password);
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
@@ -37,10 +36,7 @@ void setup() {
 
 void loop() {
  
-  //Serial.print("Connecting to ");
-  //Serial.println(host);
-  
-  // Use WiFiClient class to create TCP connections
+  // Usiamo WiFiClient per la connessione al web
   WiFiClient client;
   const int httpPort = 80;
   if (!client.connect(host, httpPort)) {
@@ -48,25 +44,26 @@ void loop() {
     return;
   }
   
-  // Reading temperature and humidity
+  // Leggiamo il valore analogico della LDR
   int lux = analogRead(A0);
   
-  // This will send the request to the server
-  client.print(String("GET /dweet/for/SchoolMakerDay?lux=") + String(lux) + " HTTP/1.1\r\n" +
+  // Costruisco l'url per dweet.io
+  String url = String("GET /dweet/for/SchoolMakerDayLDR?lux=") + 
+               String(lux) + " HTTP/1.1\r\n" +
                "Host: " + host + "\r\n" + 
-               "Connection: close\r\n\r\n");
+               "Connection: close\r\n\r\n";
+  
+  // il Log qui...
+  // https://dweet.io/follow/SchoolMakerDayLDR 
+  client.print(url);
   delay(10);
   
-  // Read all the lines of the reply from server and print them to Serial
+  // Leggo tutto quello che mi arriva come risposta...
   while(client.available()){
     String line = client.readStringUntil('\r');
-    //Serial.print(line);
+    Serial.print(line);
   }
-  
-  //Serial.println();
-  //Serial.println("closing connection");
-  
-  // Repeat every 5 seconds
-  delay(10000);
- 
+    
+  // Ogni 5 secondi rifaciamo il giro.
+  delay(5000);
 }
