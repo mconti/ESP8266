@@ -1,11 +1,9 @@
 /**
- * Derivato da
- * BasicHTTPClient.ino
- * presente nelgli esempio ESP8266
- * 
- * Modificato da posta@maurizioconti.com per l'uso con PubNub
+ * Esempio di utilizzo di ESP8266 (Witty Cloud Development Board) con PubNub
+ * Maurizio Conti per FabLab Romagna - posta@fablabromagna.org
  * 
  * Manuale PubNub: https://www.pubnub.com/knowledge-base/categories/rest
+ * Manuale ArduinoJson: https://github.com/bblanchon/ArduinoJson/wiki/Compatibility-issues
  */
 
 #include <Arduino.h>
@@ -13,15 +11,18 @@
 #include <ESP8266WiFi.h>
 #include <ESP8266WiFiMulti.h>
 #include <ESP8266HTTPClient.h>
+
 #include <ArduinoJson.h>
 
 ESP8266WiFiMulti WiFiMulti;
 
 const char* host = "pubsub.pubnub.com";
 const int httpPort = 80;
-char pubkey[] = "pub-c-531543bb-e12b-4db6-9c4b-f9df0fee3067";
-char subkey[] = "sub-c-021829ca-e9cb-11e5-8346-0619f8945a4f";
-char channel[] = "Faretto1";
+char pubkey[] = "demo";
+char subkey[] = "demo";
+
+String canaleComando = "command";
+String canaleStato = "status";
 
 const char* ssid     = "IoT";
 const char* password = "Prova1234";
@@ -29,12 +30,20 @@ const char* password = "Prova1234";
 String pub_timeToken = "";
 String sub_timeToken = "";
 
+int oldAnalogVal = 0;
+
+// LED RGB presente a bordo della scheda Witty Cloud
+#define REDPIN 15
+#define GREENPIN 12
+#define BLUEPIN 13
+
+
 /**
- * Partendo dal canale che gli arriva come parametro, costruisce una roba del genere
+ * Costruisce un url per publish
  * http://pubsub.pubnub.com/publish/pubkey/subkey/0/canale/0/
  * e lo ritorna.
 */
-String PNPubUrl(char* ch)
+String PNPubUrl(String ch)
 {
     String strUrl = String( "http://");
     strUrl += host;
@@ -47,11 +56,11 @@ String PNPubUrl(char* ch)
 }
 
 /**
- * Partendo dal canale che gli arriva come parametro, costruisce una roba del genere
+ * Costruisce un url per subscribe
  * http://pubsub.pubnub.com/subscribe/subkey/canale/0/123456789
  * dove 123456789 è il timeToken.
 */
-String PNSubUrl(char* ch, String timeToken)
+String PNSubUrl(String ch, String timeToken)
 {
     String strUrl = String( "http://");
     strUrl += host;
@@ -72,21 +81,18 @@ String getSensorInJson(int R, int G, int B)
     
     JsonObject& objRoot = jsonBuffer.createObject();
     objRoot["Red"] = R;
-    objRoot["Blue"] = G;
-    objRoot["Green"] = B;
-  
-    //JsonArray& data = objRoot.createNestedArray("data");
-    //data.add(48.756080, 6);  // 6 is the number of decimals to print
-    //data.add(2.302038, 6);   // if not specified, 2 digits are printed
-    
-    char buffer[200];
-    objRoot.printTo(buffer, sizeof(buffer));
+    objRoot["Green"] = G;
+    objRoot["Blue"] = B;
+
+    int len = objRoot.measureLength() + 1;
+    char buffer[len];
+    objRoot.printTo(buffer, len);
     
     return String( buffer );    
 }
 
 /*
- *  Verifica se una data stringa è un numero
+ *  Verifica se la stringa è un numero
  */
 boolean isValidNumber(String str){
    for(byte i=0;i<str.length();i++)
@@ -113,11 +119,12 @@ String decodeToken(String jsonIn, int pos, String oldToken)
     String retVal = "0";
     
     // Estrai il TimeToken dal json che è appena arrivato fresco fresco
-    StaticJsonBuffer<1000> jsonBuffer;
+    DynamicJsonBuffer jsonBuffer;
     JsonArray& arrayRoot = jsonBuffer.parseArray(jsonIn);
 
     // Preleva il TimeToken alla posizione pos
-    String token = String(arrayRoot.get<const char*>(pos));
+    //String token = String(arrayRoot.get<const char*>(pos));
+    String token = arrayRoot[pos].asString();
 
     // Lo ritorna solo se è un numero.
     retVal = (isValidNumber( token )) ? token : oldToken; 
@@ -131,47 +138,38 @@ String decodeToken(String jsonIn, int pos, String oldToken)
 /**
  *  Estrae il payLoad dalla stringa jsonIn.
  */
-String decodePayload(String jsonIn, int pos)
+bool decodePayload(String jsonIn, int pos)
 {
-    Serial.print("json: ");
-    Serial.println(jsonIn);
+    // Arriva una roba del genere 
+    // [[{"Red":236,"Blue":336,"Green":436}],"14653714002897936"]
+    // A guardarlo bene si nota che è un array con dentro due elementi
+    // Il primo è a sua volta un array, il secondo un numero (il timeToken)
+    // A noi serve il primo elemento di root[0] quindi root[0][0]
 
-    String retVal = "0";
-    
     DynamicJsonBuffer jsonBuffer;
-    JsonArray& root = jsonBuffer.parseObject(jsonIn)[0];
+    JsonArray& root = jsonBuffer.parseArray(jsonIn);
+    if( root.success() )
+    {
 
-    const char* inner = root.get<const char*>(0);
-    Serial.print("inner: ");
-    Serial.println(inner);
-
-    JsonArray& color = jsonBuffer.parseArray(root.get<const char*>(0));
-    int red = color[0];
-    Serial.print("payLoad: ");
-    Serial.println(red);
-    
-    
-    
-//    StaticJsonBuffer<1000> jsonBuffer;
-//    JsonArray& arrayRoot = jsonBuffer.parseArray(jsonIn);
-//    JsonObject& s = arrayRoot[0];
-//    const char* red = s["Red"];
-//    
-//    Serial.print("payLoad: ");
-//    Serial.println(red);
-//    
-//    // Preleva il PayLoad alla posizione pos
-//    const char* payLoad = arrayRoot.get<const char*>(pos);
-//    Serial.print("payLoad: ");
-//    Serial.println(payLoad);
-//    
-//    JsonObject& objRoot = jsonBuffer.parseObject(payLoad);
-//    if( objRoot.success() ){
-//      const char* red = objRoot["Red"];
-//      Serial.print( red );
-//    }
+      // Serial.printf( "root: %d\n", root.size() );                // Stampa 2
+      // Serial.printf( "root[0]: %d\n", root[0].size() );          // Se è vuoto vale 0
+      // Serial.printf( "root[0][0]: %d\n", root[0][0].size() );    // Se ci sono i tre elementi R, G, B allora vale 3
       
-    return retVal;
+      if( root[0].size() > 0 )
+      {    
+        int R = root[0][0]["Red"];
+        int G = root[0][0]["Green"];
+        int B = root[0][0]["Blue"];
+
+        analogWrite(REDPIN, R);
+        analogWrite(GREENPIN, G);
+        analogWrite(BLUEPIN, B);
+        
+        Serial.printf( "R:%d, G;%d, B:%d\n\n", R, G, B );
+        return true;
+      }
+    }
+    return false;
 }
 
 /**
@@ -181,10 +179,9 @@ String decodePayload(String jsonIn, int pos)
  *    4) Aspetta la risposta
  *    5) Se la risposta è valida, la decodifica ed estrare il timeToken (lo memorizza come variabile globale)
  */
-String PNSendData(char* ch, String msg)
+String PNSendData(String ch, String msg)
 {   
-    Serial.print("\nPUB su : ");
-    Serial.println(ch);
+    Serial.printf("%s > %s\n", ch.c_str(), msg.c_str());
 
     String retVal="";
 
@@ -194,7 +191,6 @@ String PNSendData(char* ch, String msg)
     
     // Forma l'url completo per il publish PubNub
     String strUrl = PNPubUrl( ch ) + msg;
-    Serial.println(strUrl);
     
     HTTPClient http;
     http.begin( strUrl );
@@ -233,7 +229,7 @@ String PNSendData(char* ch, String msg)
 /**
  *  Chiama PubNub per vedere se ci sono valori sul canale  
  */
-String PNGetData(char* ch, String timeToken)
+String PNGetData(String ch, String timeToken)
 {   
     String retVal = "[[], \"errore...\"]";
     
@@ -243,10 +239,6 @@ String PNGetData(char* ch, String timeToken)
 
     // Forma l'url completo per il subscribe PubNub
     String strUrl = PNSubUrl( ch, timeToken );
-    Serial.print("\nSUB su: ");
-    Serial.print(ch);
-    Serial.print(", TT: ");
-    Serial.println(timeToken);
     
     HTTPClient http;
     http.begin( strUrl );
@@ -260,12 +252,14 @@ String PNGetData(char* ch, String timeToken)
         if(httpCode == HTTP_CODE_OK) {
           
             int httpSize = http.getSize();
-            Serial.print("Sono arrivati:");
-            Serial.print(httpSize);
-            Serial.println(" byte.");
+            //Serial.print("Sono arrivati:");
+            //Serial.print(httpSize);
+            //Serial.println(" byte.");
             
-            if (httpSize > 0)
+            if (httpSize > 0){
                 retVal = http.getString();
+                Serial.printf("%s < %s %s\n",ch.c_str(), timeToken.c_str(), retVal.c_str());
+            }
         }
         else{
           // dal server arriva un codice ... non è un errore ma non è neanche roba buona
@@ -294,55 +288,75 @@ String PNGetData(char* ch, String timeToken)
 //
 void setup() {
 
+    // Campo
+    pinMode(REDPIN, OUTPUT); 
+    pinMode(GREENPIN, OUTPUT); 
+    pinMode(BLUEPIN, OUTPUT); 
+
+    // Seriale
     Serial.begin(115200);
     Serial.setDebugOutput(true);
     Serial.println();
 
-    for(uint8_t t = 4; t > 0; t--) {
-        Serial.printf("[SETUP] WAIT %d...\n", t);
+    delay(200);
+
+    // Client WiFi 
+    WiFiMulti.addAP(ssid, password);
+    while((WiFiMulti.run() != WL_CONNECTED)) 
+    {
+        Serial.printf(".");
         Serial.flush();
-        delay(500);
+        delay(200);
     }
 
-    WiFiMulti.addAP(ssid, password);
+    // La prima connessione con PubNub torna [[],"10000"] , la scartiamo
+    String r2 = PNGetData(canaleStato, sub_timeToken);
+    decodePayload( r2, 0 );
+
+    // La seconda connessione viene fatta con TimeToken == 0 e serve per capire quali sia il primo TimeToken valido
+    r2 = PNGetData(canaleStato, sub_timeToken);
+    decodePayload( r2, 0 );
+
 }
 
-int oldAnalogVal = 0;
 
 //
 // main loop
 //
 void loop() {
-   
+
+    // Legge dal cloud
     if((WiFiMulti.run() == WL_CONNECTED)) 
     {
-      // Pubblica solo se i valori cambiano
+        // Prende da PubNub l'ultimo record, aggiorna TimeToken se necessario
+        String result = PNGetData(canaleComando, sub_timeToken);
+
+        // Interpreta ciò che è arrivato
+        // Impone lo stato al campo
+        // Se quello che è arrivato ha un senso (contiene un minimo di json valido 
+        // ai fini di un R, G, B, allora da la conferma sul canale
+        if( decodePayload( result, 0 ) ) {
+          PNSendData(canaleStato, "[\"OK\"]");
+        }
+    }
+    delay(100);
+
+    // Scrive sul cloud
+    if((WiFiMulti.run() == WL_CONNECTED)) 
+    {
+      // Invia sul cloud solo se i valori letti dal campo sono cambiati
       int analogVal = analogRead(0);
       if( oldAnalogVal != analogVal ){
         
         oldAnalogVal = analogVal;
 
-        // Forma R, G, B in modo fittizio e li converte in json
-        String strMsg = getSensorInJson(analogVal, analogVal+100, analogVal+200);
-        String r1 = PNSendData("Faretto1", strMsg);
-        Serial.print("ritorna: ");
-        Serial.println(r1);
+        // Forma una strina json R, G, B partendo dal valore analogico letto dal campo
+        String strMsg = getSensorInJson(analogVal, analogVal / 100, analogVal / 30);
+        String r1 = PNSendData(canaleComando, strMsg);
       }
     }
-    delay(300);
 
-    if((WiFiMulti.run() == WL_CONNECTED)) 
-    {
-        String r2 = PNGetData("Faretto1", sub_timeToken);
-        decodePayload( r2, 0 );
-//        Serial.print("ritorna: ");
-//        Serial.println(r2);
-
-//        String r1 = PNSendSensor("Faretto2");
-//        Serial.print("ritorna: ");
-//        Serial.println(r1);
-    }
-    delay(300);
+    delay(100);
 }
 
 /*
@@ -374,92 +388,5 @@ sp: 3ffefd90 end: 3ffeffb0 offset: 01a0
 <<<stack<<<
 
 */
-
-
-/**
- *  Chiama PubNub per vedere se ci sono valori sul canale  
- *  
- *  Versione di prova... con timeout (ma è inutile...)
- *  
- */
-//String PNGetData(char* ch, String timeToken)
-//{   
-//    String retVal = "[[], \"errore...\"]";
-//    
-//    // Sistema timeToken subscribe in caso di valori sbagliati
-//    if( sub_timeToken == "10000" || sub_timeToken == "" )
-//      sub_timeToken = "0";
-//
-//    // Forma l'url completo per il subscribe PubNub
-//    String strUrl = PNSubUrl( ch, timeToken );
-//    Serial.print("\nSUB su: ");
-//    Serial.print(ch);
-//    Serial.print(", TT: ");
-//    Serial.println(timeToken);
-//    Serial.println(strUrl);
-//    
-//    HTTPClient http;
-//    http.begin( strUrl );
-//   
-//    // start connection and send HTTP header
-//    int httpCode = http.GET();
-//
-//    Serial.println("ok Fatto.");
-//    
-//    // Number of milliseconds to wait without receiving any data before we give up
-//    const int kNetworkTimeout = 500;
-//
-//    // Number of milliseconds to wait if no data is available before trying again
-//    const int kNetworkDelay = 100;
-//
-//    // httpCode will be negative on error
-//    if(httpCode > 0) {
-//        if(httpCode == HTTP_CODE_OK) {
-//          
-//            int httpSize = http.getSize();
-//            Serial.print("httpSize:");
-//            Serial.println(httpSize);
-//            
-//            // Now we've got to the body, so we can print it out
-//            unsigned long timeoutStart = millis();
-//
-//            // Whilst we haven't timed out & haven't reached the end of the body
-//            while ( (httpSize > 0 && http.connected()) && ((millis() - timeoutStart) < kNetworkTimeout) )
-//            {
-//                if (httpSize > 0)
-//                {
-//                    retVal = http.getString();
-//                    timeoutStart = millis();
-//                }
-//                else
-//                {
-//                    // We haven't got any data, so let's pause to allow some to
-//                    // arrive
-//                    delay(kNetworkDelay);
-//                }
-//                httpSize = http.getSize();
-//            }
-//        }
-//        else{
-//          // dal server arriva un codice ... non è un errore ma non è neanche roba buona
-//          retVal = String("[[],\"");
-//          retVal += String( httpCode );
-//          retVal += String("\"]");
-//        }
-//    } 
-//    else {
-//        // dal server arriva un errore
-//        retVal = String("[[],\"");
-//        retVal += http.errorToString(httpCode);
-//        retVal += String("\"]");
-//    }
-//
-//    http.end();
-//
-//    // Ricalcola il TimeToken subscribe
-//    sub_timeToken = getToken(retVal, 1, sub_timeToken);
-//
-//    return retVal;
-//}
 
 
