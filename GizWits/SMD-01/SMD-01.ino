@@ -6,8 +6,8 @@
 #include "ESP8266WiFi.h"
 
 // WiFi parameters
-const char* ssid = "IoT";
-const char* password = "Prova1234";
+const char* ssid = "smd2016";
+const char* password = "jeCa63Mije";
 
 // Host
 const char* host = "dweet.io";
@@ -65,5 +65,5 @@ void loop() {
   }
     
   // Ogni 5 secondi rifaciamo il giro.
-  delay(5000);
+  delay(1000);
 }

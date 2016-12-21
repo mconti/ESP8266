@@ -7,8 +7,8 @@ posta@maurizioconti.com - FabLab Romagna 2016
 #include <Adafruit_NeoPixel.h>
 
 // Sulla rete WiFi Locale...
-const char* g_ssid      = "IoT";
-const char* g_password  = "Prova1234";
+const char* g_ssid      = "smd2016";
+const char* g_password  = "jeCa63Mije";
 
 // Su PubNub
 const char* g_host = "pubsub.pubnub.com";
@@ -22,10 +22,10 @@ String timeToken = "0";
 #define PIN 2
 
 // Ring
-//Adafruit_NeoPixel strip = Adafruit_NeoPixel(16, PIN, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel strip = Adafruit_NeoPixel(16, PIN, NEO_GRB + NEO_KHZ800);
 
 // WS2811
-Adafruit_NeoPixel strip = Adafruit_NeoPixel(16, PIN, NEO_RGB + NEO_KHZ800);
+//Adafruit_NeoPixel strip = Adafruit_NeoPixel(16, PIN, NEO_RGB + NEO_KHZ800);
 
 int R,G,B;
 
@@ -184,7 +184,7 @@ void loop()
     for(uint16_t i=0 ; i<16 ; i++) {
       strip.setPixelColor(i, strip.Color(R, G, B));
       strip.show();
-      delay(11);
+      delay(20);
     }
   }
 
