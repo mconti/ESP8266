@@ -4,6 +4,7 @@
  * 
  * Manuale PubNub: https://www.pubnub.com/knowledge-base/categories/rest
  * Manuale ArduinoJson: https://github.com/bblanchon/ArduinoJson/wiki/Compatibility-issues
+ * Articolo MQTT PuNub:  https://www.pubnub.com/blog/2014-07-08-mqtt-now-supported-by-pubnub/
  */
 
 #include <Arduino.h>
@@ -24,8 +25,8 @@ char subkey[] = "demo";
 String canaleComando = "command";
 String canaleStato = "status";
 
-const char* ssid     = "";
-const char* password = "";
+const char* ssid     = "IoT";
+const char* password = "Prova1234";
 
 String pub_timeToken = "";
 String sub_timeToken = "";
@@ -339,7 +340,7 @@ void loop() {
           PNSendData(canaleStato, "[\"OK\"]");
         }
     }
-    delay(100);
+    delay(500);
 
     // Scrive sul cloud
     if((WiFiMulti.run() == WL_CONNECTED)) 
@@ -356,7 +357,7 @@ void loop() {
       }
     }
 
-    delay(100);
+    delay(500);
 }
 
 /*
