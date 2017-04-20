@@ -21,15 +21,15 @@
 
 /************************* WiFi Access Point *********************************/
 
-#define WLAN_SSID       ""
-#define WLAN_PASS       ""
+#define WLAN_SSID       "IoT"
+#define WLAN_PASS       "Prova1234"
 
 /************************* Adafruit.io Setup *********************************/
 
 #define AIO_SERVER      "mqtt.pubnub.com"
 #define AIO_SERVERPORT  1883                   // use 8883 for SSL
-#define AIO_USERNAME    ""
-#define AIO_KEY         ""
+#define AIO_USERNAME    "demo"
+#define AIO_KEY         "demo"
 
 /************ Global State (you don't need to change this!) ******************/
 
@@ -81,9 +81,23 @@ void setup() {
   mqtt.subscribe(&onoffbutton);
 }
 
-uint32_t x=0;
+int lightVal = 0;
+int buttonStatus = 0;
 
 void loop() {
+  
+  // rileva le variabili del campo
+  lightVal = analogRead( A0 );  // La fotocellula del Witty è sul canale A0
+  Serial.print( digitalRead( 4 ) );
+  
+  /*
+  if( !digitalRead( 4 ) ) {      // il pulsante del Witty è sul GPIO4
+      Serial.print( buttonStatus );
+      while( !digitalRead( 4 ) ){}
+      buttonStatus ^= 1;
+  }
+  */
+
   // Ensure the connection to the MQTT server is alive (this will make the first
   // connection and automatically reconnect when disconnected).  See the MQTT_connect
   // function definition further below.
@@ -102,9 +116,9 @@ void loop() {
 
   // Now we can publish stuff!
   Serial.print(F("\nSending photocell val "));
-  Serial.print(x);
+  Serial.print(lightVal);
   Serial.print("...");
-  if (! photocell.publish(x++)) {
+  if (! photocell.publish(lightVal)) {
     Serial.println(F("Failed"));
   } else {
     Serial.println(F("OK!"));
@@ -117,6 +131,8 @@ void loop() {
     mqtt.disconnect();
   }
   */
+
+  delay(300);
 }
 
 // Function to connect and reconnect as necessary to the MQTT server.
