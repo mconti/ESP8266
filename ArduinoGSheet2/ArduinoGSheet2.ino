@@ -10,7 +10,7 @@ extern "C" {
 
 // Fill ssid and password with your network credentials
 const char* ssid = "NuovoBuscone";
-const char* password = "Prova1234";
+const char* password = "eccolola";
 
 // URL chiamato durante il funzionamento
 // https://script.google.com/macros/s/AKfycbwVHad4668Vne5Rvfb4BIH6wMWqHS5WsJAqutmW_jG9lJEA6Wkt/exec
